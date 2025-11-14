@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación de Inventarios - Compresores Industriales</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .params-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 4px solid #667eea;
+        }
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .param-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .param-item label {
+            display: block;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .param-item input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        .param-item input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .results-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .result-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        .result-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .btn-simulate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+            transition: transform 0.2s;
+        }
+        .btn-simulate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        th {
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 13px;
+        }
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .positive { color: #27ae60; font-weight: 600; }
+        .negative { color: #e74c3c; font-weight: 600; }
+        .chart-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        canvas {
+            max-width: 100%;
+        }
+        .section-title {
+            font-size: 18px;
+            color: #2c3e50;
+            margin: 25px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏭 SIMULACIÓN DE INVENTARIOS</h1>
+        <div class="subtitle">Compresores Industriales - Sistema de Gestión Óptima</div>
+        
+        <div class="params-section">
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">⚙️ Parámetros de Simulación</h3>
+            <div class="params-grid">
+                <div class="param-item">
+                    <label>Costo Unitario ($)</label>
+                    <input type="number" id="costoUnitario" value="600">
+                </div>
+                <div class="param-item">
+                    <label>Demanda Media (un/día)</label>
+                    <input type="number" step="0.01" id="demandaMedia" value="2.87">
+                </div>
+                <div class="param-item">
+                    <label>Desv. Estándar (un/día)</label>
+                    <input type="number" step="0.01" id="desvEstandar" value="0.75">
+                </div>
+                <div class="param-item">
+                    <label>Lead Time (días)</label>
+                    <input type="number" id="leadTime" value="5">
+                </div>
+                <div class="param-item">
+                    <label>Costo de Ordenar ($)</label>
+                    <input type="number" id="costoOrdenar" value="200">
+                </div>
+                <div class="param-item">
+                    <label>Costo Mantener (% anual)</label>
+                    <input type="number" step="0.01" id="costoMantener" value="10">
+                </div>
+                <div class="param-item">
+                    <label>Inv. Inicial (unidades)</label>
+                    <input type="number" id="invInicial" value="50">
+                </div>
+                <div class="param-item">
+                    <label>Días por Periodo</label>
+                    <input type="number" id="diasPeriodo" value="10">
+                </div>
+            </div>
+            <button class="btn-simulate" onclick="simular()">▶️ EJECUTAR SIMULACIÓN</button>
+        </div>
+
+        <div class="results-box" id="resultsBox" style="display: none;">
+            <div class="result-item">
+                <div class="result-label">Stock Seguridad</div>
+                <div class="result-value" id="stockSeguridad">0</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Punto Reorden</div>
+                <div class="result-value" id="puntoReorden">0</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Cantidad Óptima (Q)</div>
+                <div class="result-value" id="cantidadOptima">0</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Inv. Máximo</div>
+                <div class="result-value" id="invMaximo">0</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Inv. Medio</div>
+                <div class="result-value" id="invMedio">0</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Costo Total</div>
+                <div class="result-value" id="costoTotal">$0</div>
+            </div>
+        </div>
+
+        <div class="section-title">📊 Resultados de la Simulación (15 Periodos)</div>
+        <div class="table-container">
+            <table id="tablaSimulacion">
+                <thead>
+                    <tr>
+                        <th>Periodo</th>
+                        <th>Inv. Inicial</th>
+                        <th>Demanda</th>
+                        <th>Pedido</th>
+                        <th>Inv. Final</th>
+                        <th>Faltantes</th>
+                        <th>Costo Inv.</th>
+                        <th>Costo Pedido</th>
+                        <th>Costo Faltante</th>
+                        <th>Costo Total</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaBody">
+                </tbody>
+                <tfoot style="background: #f8f9fa; font-weight: bold;">
+                    <tr id="totalRow"></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="chartInventario"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        let chartInstance = null;
+
+        function simular() {
+            const costoUnit = parseFloat(document.getElementById('costoUnitario').value);
+            const demandaMedia = parseFloat(document.getElementById('demandaMedia').value);
+            const desvEst = parseFloat(document.getElementById('desvEstandar').value);
+            const leadTime = parseInt(document.getElementById('leadTime').value);
+            const costoOrden = parseFloat(document.getElementById('costoOrdenar').value);
+            const costoMant = parseFloat(document.getElementById('costoMantener').value) / 100;
+            const invInicial = parseInt(document.getElementById('invInicial').value);
+            const diasPeriodo = parseInt(document.getElementById('diasPeriodo').value);
+
+            const Z = 1.65;
+            const stockSeguridad = Math.ceil(Z * desvEst * Math.sqrt(leadTime));
+            const demandaLT = Math.ceil(demandaMedia * leadTime);
+            const puntoReorden = demandaLT + stockSeguridad;
+            
+            const demandaAnual = demandaMedia * 365;
+            const costoMantAnual = costoUnit * costoMant;
+            const cantidadOptima = Math.ceil(Math.sqrt((2 * demandaAnual * costoOrden) / costoMantAnual));
+            
+            const invMaximo = puntoReorden + cantidadOptima;
+            const invMedio = Math.ceil((stockSeguridad + invMaximo) / 2);
+
+            document.getElementById('resultsBox').style.display = 'grid';
+            document.getElementById('stockSeguridad').textContent = stockSeguridad + ' un';
+            document.getElementById('puntoReorden').textContent = puntoReorden + ' un';
+            document.getElementById('cantidadOptima').textContent = cantidadOptima + ' un';
+            document.getElementById('invMaximo').textContent = invMaximo + ' un';
+            document.getElementById('invMedio').textContent = invMedio + ' un';
+
+            const periodos = 15;
+            let inventario = invInicial;
+            const resultados = [];
+            let costoTotalAcum = 0;
+
+            for (let i = 1; i <= periodos; i++) {
+                const invInicioPer = inventario;
+                
+                const u1 = Math.random();
+                const u2 = Math.random();
+                const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                const demandaDiaria = demandaMedia + z * desvEst;
+                const demanda = Math.max(0, Math.ceil(demandaDiaria * diasPeriodo));
+                
+                let pedido = 0;
+                if (inventario <= puntoReorden) {
+                    pedido = cantidadOptima;
+                }
+                
+                inventario = inventario + pedido - demanda;
+                let faltantes = 0;
+                if (inventario < 0) {
+                    faltantes = Math.abs(inventario);
+                    inventario = 0;
+                }
+                
+                const costoInv = (invInicioPer + inventario) / 2 * costoUnit * (costoMant / 12);
+                const costoPedido = pedido > 0 ? costoOrden : 0;
+                const costoFaltante = faltantes * costoUnit * 0.2;
+                const costoTotalPer = costoInv + costoPedido + costoFaltante;
+                
+                costoTotalAcum += costoTotalPer;
+                
+                resultados.push({
+                    periodo: i,
+                    invInicio: invInicioPer,
+                    demanda: demanda,
+                    pedido: pedido,
+                    invFinal: inventario,
+                    faltantes: faltantes,
+                    costoInv: costoInv,
+                    costoPedido: costoPedido,
+                    costoFaltante: costoFaltante,
+                    costoTotal: costoTotalPer
+                });
+            }
+
+            document.getElementById('costoTotal').textContent = '$' + costoTotalAcum.toLocaleString('es-ES', {maximumFractionDigits: 0});
+
+            const tbody = document.getElementById('tablaBody');
+            tbody.innerHTML = '';
+            
+            resultados.forEach(r => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${r.periodo}</td>
+                    <td>${r.invInicio}</td>
+                    <td>${r.demanda}</td>
+                    <td>${r.pedido > 0 ? '<span class="positive">' + r.pedido + '</span>' : '0'}</td>
+                    <td>${r.invFinal}</td>
+                    <td>${r.faltantes > 0 ? '<span class="negative">' + r.faltantes + '</span>' : '0'}</td>
+                    <td>$${r.costoInv.toFixed(0)}</td>
+                    <td>$${r.costoPedido.toFixed(0)}</td>
+                    <td>$${r.costoFaltante.toFixed(0)}</td>
+                    <td><strong>$${r.costoTotal.toFixed(0)}</strong></td>
+                `;
+            });
+
+            const totalRow = document.getElementById('totalRow');
+            const totalDemanda = resultados.reduce((sum, r) => sum + r.demanda, 0);
+            const totalPedidos = resultados.reduce((sum, r) => sum + r.pedido, 0);
+            const totalFaltantes = resultados.reduce((sum, r) => sum + r.faltantes, 0);
+            
+            totalRow.innerHTML = `
+                <td colspan="2">TOTALES</td>
+                <td>${totalDemanda}</td>
+                <td>${totalPedidos}</td>
+                <td>-</td>
+                <td>${totalFaltantes}</td>
+                <td colspan="3">COSTO TOTAL ACUMULADO:</td>
+                <td><strong>$${costoTotalAcum.toFixed(0)}</strong></td>
+            `;
+
+            crearGrafico(resultados, stockSeguridad, puntoReorden, invMaximo);
+        }
+
+        function crearGrafico(resultados, ss, rop, max) {
+            const ctx = document.getElementById('chartInventario');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const labels = resultados.map(r => 'P' + r.periodo);
+            const invFinal = resultados.map(r => r.invFinal);
+            const demanda = resultados.map(r => r.demanda);
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Inventario Final',
+                            data: invFinal,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Demanda',
+                            data: demanda,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Punto de Reorden',
+                            data: Array(resultados.length).fill(rop),
+                            borderColor: '#f39c12',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Stock de Seguridad',
+                            data: Array(resultados.length).fill(ss),
+                            borderColor: '#27ae60',
+                            borderWidth: 2,
+                            borderDash: [10, 5],
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Evolución del Inventario en 15 Periodos',
+                            font: { size: 18 }
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Unidades'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Periodos'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        window.onload = () => simular();
+    </script>
+</body>
+</html>
